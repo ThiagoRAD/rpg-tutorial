@@ -21,15 +21,34 @@ type Ninja struct {
 }
 type Game struct {
 	Ninja *Ninja
+	X, Y  float64
+	Speed float64
 }
 
 func (g *Game) Update() error {
+
+	if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
+		g.Y -= g.Speed
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
+		g.Y += g.Speed
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
+		g.X -= g.Speed
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
+		g.X += g.Speed
+	}
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{120, 180, 255, 255})
-	screen.DrawImage(g.Ninja.IdleImage.SubImage(image.Rect(0, 0, g.Ninja.IdleImage.Bounds().Dx(), g.Ninja.IdleImage.Bounds().Dy())).(*ebiten.Image), &ebiten.DrawImageOptions{})
+
+	opts := ebiten.DrawImageOptions{}
+	opts.GeoM.Translate(g.X, g.Y)
+
+	screen.DrawImage(g.Ninja.IdleImage.SubImage(image.Rect(0, 0, g.Ninja.IdleImage.Bounds().Dx()/4, g.Ninja.IdleImage.Bounds().Dy())).(*ebiten.Image), &opts)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -88,7 +107,7 @@ func main() {
 
 	ninja := NewNinja()
 
-	if err := ebiten.RunGame(&Game{Ninja: ninja}); err != nil {
+	if err := ebiten.RunGame(&Game{Ninja: ninja, X: 100, Y: 100, Speed: 2}); err != nil {
 		log.Fatal(err)
 	}
 }
