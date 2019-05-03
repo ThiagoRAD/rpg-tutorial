@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"rpg-tutorial/entities"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -11,35 +12,10 @@ import (
 
 var imageCache = make(map[string]*ebiten.Image)
 
-type Sprite struct {
-	image  *ebiten.Image
-	width  int
-	height int
-}
-
-type Drawable struct {
-	*Sprite
-	*Position
-}
-type Position struct {
-	X, Y float64
-}
-type Enemy struct {
-	*Drawable
-	FollowsPlayer bool
-}
-type Player struct {
-	*Drawable
-	Health float64
-}
-type Potion struct {
-	*Drawable
-	HealAmount float64
-}
 type Game struct {
-	player       *Player
-	enemies      []*Enemy
-	items        []*Potion
+	player       *entities.Player
+	enemies      []*entities.Enemy
+	items        []*entities.Potion
 	tilemap      *Tilemap
 	tilemapImage *ebiten.Image
 }
@@ -74,10 +50,10 @@ func (g *Game) Update() error {
 	return nil
 }
 
-func (g *Game) RenderDrawable(screen *ebiten.Image, drawable *Drawable) {
+func (g *Game) RenderDrawable(screen *ebiten.Image, drawable *entities.Drawable) {
 	opts := ebiten.DrawImageOptions{}
 	opts.GeoM.Translate(drawable.X, drawable.Y)
-	screen.DrawImage(drawable.image.SubImage(image.Rect(0, 0, drawable.image.Bounds().Dx()/drawable.width, drawable.image.Bounds().Dy()/drawable.height)).(*ebiten.Image), &opts)
+	screen.DrawImage(drawable.Sprite.Image.SubImage(image.Rect(0, 0, drawable.Sprite.Image.Bounds().Dx()/drawable.Width, drawable.Sprite.Image.Bounds().Dy()/drawable.Height)).(*ebiten.Image), &opts)
 }
 
 func (g *Game) DrawLayers(screen *ebiten.Image) {
@@ -142,14 +118,14 @@ func getImageFromFile(path string) *ebiten.Image {
 
 func (g *Game) AddPotion(X, Y float64) {
 	potionImage := getImageFromFile("./assets/images/Potion/LifePot.png")
-	item := &Potion{
-		Drawable: &Drawable{
-			Sprite: &Sprite{
-				image:  potionImage,
-				width:  1,
-				height: 1,
+	item := &entities.Potion{
+		Drawable: &entities.Drawable{
+			Sprite: &entities.Sprite{
+				Image:  potionImage,
+				Width:  1,
+				Height: 1,
 			},
-			Position: &Position{
+			Position: &entities.Position{
 				X: X,
 				Y: Y,
 			},
@@ -161,14 +137,14 @@ func (g *Game) AddPotion(X, Y float64) {
 
 func (g *Game) AddSkeleton(X, Y float64) {
 	skeletonImage := getImageFromFile("./assets/images/Skeleton/Walk.png")
-	enemy := &Enemy{
-		Drawable: &Drawable{
-			Sprite: &Sprite{
-				image:  skeletonImage,
-				width:  4,
-				height: 4,
+	enemy := &entities.Enemy{
+		Drawable: &entities.Drawable{
+			Sprite: &entities.Sprite{
+				Image:  skeletonImage,
+				Width:  4,
+				Height: 4,
 			},
-			Position: &Position{
+			Position: &entities.Position{
 				X: X,
 				Y: Y,
 			},
@@ -182,26 +158,26 @@ func main() {
 	ebiten.SetWindowSize(640, 480)
 	ebiten.SetWindowTitle("Hello, World!")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-	tilemap, err := LoadTilemap("./assets/maps/map.json")
+	tilemap, err := LoadTilemap("./assets/maps/spawn.json")
 	if err != nil {
 		log.Fatal(err)
 	}
 	ninjaImage := getImageFromFile("./assets/images/Ninja/Walk.png")
 	tilemapImage := getImageFromFile("./assets/maps/TilesetFloor.png")
 
-	player := &Drawable{
-		Sprite: &Sprite{
-			image:  ninjaImage,
-			width:  4,
-			height: 4,
+	player := &entities.Drawable{
+		Sprite: &entities.Sprite{
+			Image:  ninjaImage,
+			Width:  4,
+			Height: 4,
 		},
-		Position: &Position{
+		Position: &entities.Position{
 			X: 100,
 			Y: 100,
 		},
 	}
 	game := &Game{
-		player:       &Player{Drawable: player, Health: 100},
+		player:       &entities.Player{Drawable: player, Health: 100},
 		tilemap:      tilemap,
 		tilemapImage: tilemapImage,
 	}
