@@ -9,26 +9,35 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
+var imageCache = make(map[string]*ebiten.Image)
+
 type Sprite struct {
 	image  *ebiten.Image
 	width  int
 	height int
-	X, Y   float64
 }
 
-type Enemy struct {
+type Drawable struct {
 	*Sprite
+	*Position
+}
+type Position struct {
+	X, Y float64
+}
+type Enemy struct {
+	*Drawable
 	FollowsPlayer bool
 }
-type Potion struct {
-	*Sprite
-}
 type Player struct {
-	*Sprite
+	*Drawable
+}
+type Potion struct {
+	*Drawable
 }
 type Game struct {
 	player  *Player
 	enemies []*Enemy
+	items   []*Potion
 }
 
 func (g *Game) Update() error {
@@ -79,41 +88,63 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return ebiten.WindowSize()
 }
 
+func getImageFromFile(path string) *ebiten.Image {
+	imageCached, ok := imageCache[path]
+	if ok {
+		return imageCached
+	}
+	img, _, err := ebitenutil.NewImageFromFile(path)
+	if err != nil {
+		log.Fatal(err)
+		return nil
+	}
+	imageCache[path] = img
+	return img
+}
+
+func (g *Game) AddSkeleton(X, Y float64) {
+	skeletonImage := getImageFromFile("./assets/images/Skeleton/Walk.png")
+	enemy := &Enemy{
+		Drawable: &Drawable{
+			Sprite: &Sprite{
+				image:  skeletonImage,
+				width:  4,
+				height: 4,
+			},
+			Position: &Position{
+				X: X,
+				Y: Y,
+			},
+		},
+		FollowsPlayer: true,
+	}
+	g.enemies = append(g.enemies, enemy)
+}
+
 func main() {
 	ebiten.SetWindowSize(640, 480)
 	ebiten.SetWindowTitle("Hello, World!")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 
-	ninjaImage, _, err := ebitenutil.NewImageFromFile("./assets/images/Ninja/Walk.png")
-	skeletonImage, _, err := ebitenutil.NewImageFromFile("./assets/images/Skeleton/Walk.png")
+	ninjaImage := getImageFromFile("./assets/images/Ninja/Walk.png")
 
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	player := &Sprite{
-		image:  ninjaImage,
-		width:  4,
-		height: 4,
-		X:      100,
-		Y:      100,
-	}
-
-	enemy := &Enemy{
+	player := &Drawable{
 		Sprite: &Sprite{
-			image:  skeletonImage,
+			image:  ninjaImage,
 			width:  4,
 			height: 4,
-			X:      200,
-			Y:      200,
 		},
-		FollowsPlayer: true,
+		Position: &Position{
+			X: 100,
+			Y: 100,
+		},
 	}
-
 	game := &Game{
-		player:  &Player{Sprite: player},
-		enemies: []*Enemy{enemy},
+		player: &Player{Drawable: player},
 	}
+	game.AddSkeleton(200, 200)
+	game.AddSkeleton(350, 400)
+	game.AddSkeleton(-100, -400)
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
