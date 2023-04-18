@@ -10,7 +10,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-var screenWidth, screenHeight int = 640, 480
+var screenWidth, screenHeight float64 = 640.0, 480.0
 var imageCache = make(map[string]*ebiten.Image)
 
 type Game struct {
@@ -22,8 +22,8 @@ type Game struct {
 	camera       *Camera
 }
 
-func (g *Game) Layout(outsideWidth int, outsideHeight int) (screenWidth int, screenHeight int) {
-	return screenWidth, screenHeight
+func (g *Game) Layout(outsideWidth int, outsideHeight int) (int, int) {
+	return int(screenWidth), int(screenHeight)
 }
 
 func (g *Game) Update() error {
@@ -162,7 +162,7 @@ func (g *Game) AddSkeleton(X, Y float64) {
 }
 
 func main() {
-	ebiten.SetWindowSize(screenWidth, screenHeight)
+	ebiten.SetWindowSize(int(screenWidth), int(screenHeight))
 	ebiten.SetWindowTitle("Hello, World!")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	tilemap, err := LoadTilemap("./assets/maps/spawn.json")
