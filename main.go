@@ -22,6 +22,10 @@ type Game struct {
 	camera       *Camera
 }
 
+func (g *Game) Layout(outsideWidth int, outsideHeight int) (screenWidth int, screenHeight int) {
+	return screenWidth, screenHeight
+}
+
 func (g *Game) Update() error {
 	if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
 		g.player.Y -= 2
@@ -74,6 +78,7 @@ func (g *Game) DrawLayers(screen *ebiten.Image) {
 			srcRect := image.Rect(srcX, srcY, srcX+16, srcY+16)
 			opts := ebiten.DrawImageOptions{}
 			opts.GeoM.Translate(float64(x), float64(y))
+			opts.GeoM.Translate(g.camera.X, g.camera.Y)
 			screen.DrawImage(g.tilemapImage.SubImage(srcRect).(*ebiten.Image), &opts)
 
 		}
@@ -84,6 +89,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	opts := ebiten.DrawImageOptions{}
 	opts.GeoM.Translate(g.player.X, g.player.Y)
+	opts.GeoM.Translate(g.camera.X, g.camera.Y)
 
 	g.DrawLayers(screen)
 	g.RenderDrawable(screen, g.player.Drawable)
@@ -91,12 +97,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for _, enemy := range g.enemies {
 		opts := ebiten.DrawImageOptions{}
 		opts.GeoM.Translate(enemy.X, enemy.Y)
+		opts.GeoM.Translate(g.camera.X, g.camera.Y)
 		g.RenderDrawable(screen, enemy.Drawable)
 	}
 
 	for _, item := range g.items {
 		opts := ebiten.DrawImageOptions{}
 		opts.GeoM.Translate(item.X, item.Y)
+		opts.GeoM.Translate(g.camera.X, g.camera.Y)
 		g.RenderDrawable(screen, item.Drawable)
 	}
 }
