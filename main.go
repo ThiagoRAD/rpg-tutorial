@@ -9,35 +9,54 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-type Ninja struct {
-	AttackImage   *ebiten.Image
-	DeadImage     *ebiten.Image
-	IdleImage     *ebiten.Image
-	ItemImage     *ebiten.Image
-	JumpImage     *ebiten.Image
-	Special1Image *ebiten.Image
-	Special2Image *ebiten.Image
-	WalkImage     *ebiten.Image
+type Sprite struct {
+	image  *ebiten.Image
+	width  int
+	height int
+	X, Y   float64
+}
+
+type Enemy struct {
+	*Sprite
+	FollowsPlayer bool
+}
+type Potion struct {
+	*Sprite
+}
+type Player struct {
+	*Sprite
 }
 type Game struct {
-	Ninja *Ninja
-	X, Y  float64
-	Speed float64
+	player  *Player
+	enemies []*Enemy
 }
 
 func (g *Game) Update() error {
-
 	if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
-		g.Y -= g.Speed
+		g.player.Y -= 2
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
-		g.Y += g.Speed
+		g.player.Y += 2
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-		g.X -= g.Speed
+		g.player.X -= 2
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-		g.X += g.Speed
+		g.player.X += 2
+	}
+	for _, enemy := range g.enemies {
+		if enemy.FollowsPlayer {
+			if g.player.X < enemy.X {
+				enemy.X -= 1
+			} else if g.player.X > enemy.X {
+				enemy.X += 1
+			}
+			if g.player.Y < enemy.Y {
+				enemy.Y -= 1
+			} else if g.player.Y > enemy.Y {
+				enemy.Y += 1
+			}
+		}
 	}
 	return nil
 }
@@ -46,68 +65,57 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{120, 180, 255, 255})
 
 	opts := ebiten.DrawImageOptions{}
-	opts.GeoM.Translate(g.X, g.Y)
+	opts.GeoM.Translate(g.player.X, g.player.Y)
 
-	screen.DrawImage(g.Ninja.IdleImage.SubImage(image.Rect(0, 0, g.Ninja.IdleImage.Bounds().Dx()/4, g.Ninja.IdleImage.Bounds().Dy())).(*ebiten.Image), &opts)
+	screen.DrawImage(g.player.image.SubImage(image.Rect(0, 0, g.player.image.Bounds().Dx()/g.player.width, g.player.image.Bounds().Dy()/g.player.height)).(*ebiten.Image), &opts)
+	for _, enemy := range g.enemies {
+		opts := ebiten.DrawImageOptions{}
+		opts.GeoM.Translate(enemy.X, enemy.Y)
+		screen.DrawImage(enemy.image.SubImage(image.Rect(0, 0, enemy.image.Bounds().Dx()/enemy.width, enemy.image.Bounds().Dy()/enemy.height)).(*ebiten.Image), &opts)
+	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return ebiten.WindowSize()
 }
 
-func NewNinja() *Ninja {
-	basePath := "./assets/images/Ninja/"
-	AttackImage, _, err := ebitenutil.NewImageFromFile(basePath + "Attack.png")
-	if err != nil {
-		log.Fatal(err)
-	}
-	DeadImage, _, err := ebitenutil.NewImageFromFile(basePath + "Dead.png")
-	if err != nil {
-		log.Fatal(err)
-	}
-	IdleImage, _, err := ebitenutil.NewImageFromFile(basePath + "Idle.png")
-	if err != nil {
-		log.Fatal(err)
-	}
-	ItemImage, _, err := ebitenutil.NewImageFromFile(basePath + "Item.png")
-	if err != nil {
-		log.Fatal(err)
-	}
-	JumpImage, _, err := ebitenutil.NewImageFromFile(basePath + "Jump.png")
-	if err != nil {
-		log.Fatal(err)
-	}
-	Special1Image, _, err := ebitenutil.NewImageFromFile(basePath + "Special1.png")
-	if err != nil {
-		log.Fatal(err)
-	}
-	Special2Image, _, err := ebitenutil.NewImageFromFile(basePath + "Special2.png")
-	if err != nil {
-		log.Fatal(err)
-	}
-	WalkImage, _, err := ebitenutil.NewImageFromFile(basePath + "Walk.png")
-	if err != nil {
-		log.Fatal(err)
-	}
-	return &Ninja{
-		AttackImage:   AttackImage,
-		DeadImage:     DeadImage,
-		IdleImage:     IdleImage,
-		ItemImage:     ItemImage,
-		JumpImage:     JumpImage,
-		Special1Image: Special1Image,
-		Special2Image: Special2Image,
-		WalkImage:     WalkImage,
-	}
-}
 func main() {
 	ebiten.SetWindowSize(640, 480)
 	ebiten.SetWindowTitle("Hello, World!")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 
-	ninja := NewNinja()
+	ninjaImage, _, err := ebitenutil.NewImageFromFile("./assets/images/Ninja/Walk.png")
+	skeletonImage, _, err := ebitenutil.NewImageFromFile("./assets/images/Skeleton/Walk.png")
 
-	if err := ebiten.RunGame(&Game{Ninja: ninja, X: 100, Y: 100, Speed: 2}); err != nil {
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	player := &Sprite{
+		image:  ninjaImage,
+		width:  4,
+		height: 4,
+		X:      100,
+		Y:      100,
+	}
+
+	enemy := &Enemy{
+		Sprite: &Sprite{
+			image:  skeletonImage,
+			width:  4,
+			height: 4,
+			X:      200,
+			Y:      200,
+		},
+		FollowsPlayer: true,
+	}
+
+	game := &Game{
+		player:  &Player{Sprite: player},
+		enemies: []*Enemy{enemy},
+	}
+
+	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
 }
