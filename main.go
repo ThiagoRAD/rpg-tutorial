@@ -30,9 +30,11 @@ type Enemy struct {
 }
 type Player struct {
 	*Drawable
+	Health float64
 }
 type Potion struct {
 	*Drawable
+	HealAmount float64
 }
 type Game struct {
 	player  *Player
@@ -70,24 +72,30 @@ func (g *Game) Update() error {
 	return nil
 }
 
+func (g *Game) RenderDrawable(screen *ebiten.Image, drawable *Drawable) {
+	opts := ebiten.DrawImageOptions{}
+	opts.GeoM.Translate(drawable.X, drawable.Y)
+	screen.DrawImage(drawable.image.SubImage(image.Rect(0, 0, drawable.image.Bounds().Dx()/drawable.width, drawable.image.Bounds().Dy()/drawable.height)).(*ebiten.Image), &opts)
+}
+
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{120, 180, 255, 255})
 
 	opts := ebiten.DrawImageOptions{}
 	opts.GeoM.Translate(g.player.X, g.player.Y)
 
-	screen.DrawImage(g.player.image.SubImage(image.Rect(0, 0, g.player.image.Bounds().Dx()/g.player.width, g.player.image.Bounds().Dy()/g.player.height)).(*ebiten.Image), &opts)
+	g.RenderDrawable(screen, g.player.Drawable)
 
 	for _, enemy := range g.enemies {
 		opts := ebiten.DrawImageOptions{}
 		opts.GeoM.Translate(enemy.X, enemy.Y)
-		screen.DrawImage(enemy.image.SubImage(image.Rect(0, 0, enemy.image.Bounds().Dx()/enemy.width, enemy.image.Bounds().Dy()/enemy.height)).(*ebiten.Image), &opts)
+		g.RenderDrawable(screen, enemy.Drawable)
 	}
 
 	for _, item := range g.items {
 		opts := ebiten.DrawImageOptions{}
 		opts.GeoM.Translate(item.X, item.Y)
-		screen.DrawImage(item.image.SubImage(image.Rect(0, 0, item.image.Bounds().Dx()/item.width, item.image.Bounds().Dy()/item.height)).(*ebiten.Image), &opts)
+		g.RenderDrawable(screen, item.Drawable)
 	}
 }
 
@@ -123,6 +131,7 @@ func (g *Game) AddPotion(X, Y float64) {
 				Y: Y,
 			},
 		},
+		HealAmount: 20,
 	}
 	g.items = append(g.items, item)
 }
@@ -165,7 +174,7 @@ func main() {
 		},
 	}
 	game := &Game{
-		player: &Player{Drawable: player},
+		player: &Player{Drawable: player, Health: 100},
 	}
 	game.AddSkeleton(200, 200)
 	game.AddSkeleton(350, 400)
