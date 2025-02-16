@@ -10,6 +10,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
+var screenWidth, screenHeight int = 640, 480
 var imageCache = make(map[string]*ebiten.Image)
 
 type Game struct {
@@ -18,6 +19,7 @@ type Game struct {
 	items        []*entities.Potion
 	tilemap      *Tilemap
 	tilemapImage *ebiten.Image
+	camera       *Camera
 }
 
 func (g *Game) Update() error {
@@ -47,6 +49,7 @@ func (g *Game) Update() error {
 			}
 		}
 	}
+	g.camera.FollowTarget(g.player.X, g.player.Y, screenWidth, screenHeight)
 	return nil
 }
 
@@ -96,10 +99,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		opts.GeoM.Translate(item.X, item.Y)
 		g.RenderDrawable(screen, item.Drawable)
 	}
-}
-
-func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return ebiten.WindowSize()
 }
 
 func getImageFromFile(path string) *ebiten.Image {
@@ -155,7 +154,7 @@ func (g *Game) AddSkeleton(X, Y float64) {
 }
 
 func main() {
-	ebiten.SetWindowSize(640, 480)
+	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("Hello, World!")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	tilemap, err := LoadTilemap("./assets/maps/spawn.json")
@@ -180,6 +179,7 @@ func main() {
 		player:       &entities.Player{Drawable: player, Health: 100},
 		tilemap:      tilemap,
 		tilemapImage: tilemapImage,
+		camera:       NewCamera(),
 	}
 	game.AddSkeleton(200, 200)
 	game.AddSkeleton(350, 400)
