@@ -77,10 +77,17 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	opts.GeoM.Translate(g.player.X, g.player.Y)
 
 	screen.DrawImage(g.player.image.SubImage(image.Rect(0, 0, g.player.image.Bounds().Dx()/g.player.width, g.player.image.Bounds().Dy()/g.player.height)).(*ebiten.Image), &opts)
+
 	for _, enemy := range g.enemies {
 		opts := ebiten.DrawImageOptions{}
 		opts.GeoM.Translate(enemy.X, enemy.Y)
 		screen.DrawImage(enemy.image.SubImage(image.Rect(0, 0, enemy.image.Bounds().Dx()/enemy.width, enemy.image.Bounds().Dy()/enemy.height)).(*ebiten.Image), &opts)
+	}
+
+	for _, item := range g.items {
+		opts := ebiten.DrawImageOptions{}
+		opts.GeoM.Translate(item.X, item.Y)
+		screen.DrawImage(item.image.SubImage(image.Rect(0, 0, item.image.Bounds().Dx()/item.width, item.image.Bounds().Dy()/item.height)).(*ebiten.Image), &opts)
 	}
 }
 
@@ -100,6 +107,24 @@ func getImageFromFile(path string) *ebiten.Image {
 	}
 	imageCache[path] = img
 	return img
+}
+
+func (g *Game) AddPotion(X, Y float64) {
+	potionImage := getImageFromFile("./assets/images/Potion/LifePot.png")
+	item := &Potion{
+		Drawable: &Drawable{
+			Sprite: &Sprite{
+				image:  potionImage,
+				width:  1,
+				height: 1,
+			},
+			Position: &Position{
+				X: X,
+				Y: Y,
+			},
+		},
+	}
+	g.items = append(g.items, item)
 }
 
 func (g *Game) AddSkeleton(X, Y float64) {
@@ -145,6 +170,7 @@ func main() {
 	game.AddSkeleton(200, 200)
 	game.AddSkeleton(350, 400)
 	game.AddSkeleton(-100, -400)
+	game.AddPotion(300, 300)
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
