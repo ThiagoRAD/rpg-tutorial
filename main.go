@@ -37,9 +37,11 @@ type Potion struct {
 	HealAmount float64
 }
 type Game struct {
-	player  *Player
-	enemies []*Enemy
-	items   []*Potion
+	player       *Player
+	enemies      []*Enemy
+	items        []*Potion
+	tilemap      *Tilemap
+	tilemapImage *ebiten.Image
 }
 
 func (g *Game) Update() error {
@@ -78,12 +80,33 @@ func (g *Game) RenderDrawable(screen *ebiten.Image, drawable *Drawable) {
 	screen.DrawImage(drawable.image.SubImage(image.Rect(0, 0, drawable.image.Bounds().Dx()/drawable.width, drawable.image.Bounds().Dy()/drawable.height)).(*ebiten.Image), &opts)
 }
 
+func (g *Game) DrawLayers(screen *ebiten.Image) {
+	for _, layer := range g.tilemap.Tiles {
+		for index, id := range layer.Data {
+			x := index % layer.Width
+			y := index / layer.Width
+			x *= 16 // the width of each tile in the map
+			y *= 16
+			srcX := (id - 1) % 22 // the tileimage has 22 squares
+			srcY := (id - 1) / 22
+			srcX *= 16
+			srcY *= 16
+
+			srcRect := image.Rect(srcX, srcY, srcX+16, srcY+16)
+			opts := ebiten.DrawImageOptions{}
+			opts.GeoM.Translate(float64(x), float64(y))
+			screen.DrawImage(g.tilemapImage.SubImage(srcRect).(*ebiten.Image), &opts)
+
+		}
+	}
+}
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{120, 180, 255, 255})
 
 	opts := ebiten.DrawImageOptions{}
 	opts.GeoM.Translate(g.player.X, g.player.Y)
 
+	g.DrawLayers(screen)
 	g.RenderDrawable(screen, g.player.Drawable)
 
 	for _, enemy := range g.enemies {
@@ -159,8 +182,12 @@ func main() {
 	ebiten.SetWindowSize(640, 480)
 	ebiten.SetWindowTitle("Hello, World!")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-
+	tilemap, err := LoadTilemap("./assets/maps/map.json")
+	if err != nil {
+		log.Fatal(err)
+	}
 	ninjaImage := getImageFromFile("./assets/images/Ninja/Walk.png")
+	tilemapImage := getImageFromFile("./assets/maps/TilesetFloor.png")
 
 	player := &Drawable{
 		Sprite: &Sprite{
@@ -174,7 +201,9 @@ func main() {
 		},
 	}
 	game := &Game{
-		player: &Player{Drawable: player, Health: 100},
+		player:       &Player{Drawable: player, Health: 100},
+		tilemap:      tilemap,
+		tilemapImage: tilemapImage,
 	}
 	game.AddSkeleton(200, 200)
 	game.AddSkeleton(350, 400)
