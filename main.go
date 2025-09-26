@@ -1,6 +1,7 @@
 package main
 
 import (
+	"image"
 	"image/color"
 	"log"
 
@@ -28,7 +29,7 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{120, 180, 255, 255})
-	screen.DrawImage(g.Ninja.IdleImage, &ebiten.DrawImageOptions{})
+	screen.DrawImage(g.Ninja.IdleImage.SubImage(image.Rect(0, 0, g.Ninja.IdleImage.Bounds().Dx(), g.Ninja.IdleImage.Bounds().Dy())).(*ebiten.Image), &ebiten.DrawImageOptions{})
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
